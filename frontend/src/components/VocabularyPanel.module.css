@@ -1,0 +1,76 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tableScroll {
+  width: 100%;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.table {
+  width: 100%;
+  min-width: 320px;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.table th {
+  background: rgba(248, 250, 252, 0.95);
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  text-align: left;
+  padding: 10px var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(8px);
+}
+
+.table td {
+  text-align: left;
+  padding: 8px var(--space-md);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+  color: var(--color-text);
+}
+
+.table tr:hover td {
+  background: rgba(248, 250, 252, 0.8);
+}
+
+.newRow td {
+  color: #db2777;
+}
+
+.newRow td:first-child {
+  font-weight: 700;
+}
+
+.resetButton {
+  align-self: flex-start;
+  background: rgba(225, 29, 72, 0.06);
+  color: #e11d48;
+  border: 1px solid rgba(225, 29, 72, 0.25);
+  border-radius: var(--radius-pill);
+  padding: 6px var(--space-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetButton:hover {
+  background: rgba(225, 29, 72, 0.15);
+  border-color: var(--color-status-error);
+  color: #be123c;
+  box-shadow: 0 0 10px rgba(225, 29, 72, 0.15);
+}
+
+

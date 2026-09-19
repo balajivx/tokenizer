@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+.venv/
+backend/.venv/
+venv/
+env/
+
+# Build artifacts
+dist/
+frontend/dist/
+dist-ssr/
+*.egg-info/
+build/
+
+# Testing & Cache
+.pytest_cache/
+__pycache__/
+*.py[cod]
+.coverage
+htmlcov/
+
+# Logs & Environment
+*.log
+.env
+.env.local
+.env.*.local
+*.local
+
+# OS & Editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo

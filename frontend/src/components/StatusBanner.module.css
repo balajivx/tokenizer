@@ -1,0 +1,53 @@
+.banner {
+  padding: 10px var(--space-md);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  animation: bannerFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes bannerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loading {
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.35);
+  background: rgba(37, 99, 235, 0.06);
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.1);
+}
+
+.error {
+  color: #e11d48;
+  border-color: rgba(225, 29, 72, 0.35);
+  background: rgba(225, 29, 72, 0.06);
+  box-shadow: 0 0 12px rgba(225, 29, 72, 0.1);
+}
+
+.success {
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.35);
+  background: rgba(5, 150, 105, 0.06);
+  box-shadow: 0 0 12px rgba(5, 150, 105, 0.1);
+}
+
+.empty {
+  color: var(--color-text-secondary);
+  background: #ffffff;
+  border-color: var(--color-border-subtle);
+}
+
+
