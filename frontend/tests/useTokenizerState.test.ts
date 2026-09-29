@@ -13,6 +13,7 @@ vi.mock('../src/api/client', () => ({
   getBPEModel: vi.fn(),
   trainBPE: vi.fn(),
   resetBPE: vi.fn(),
+  createEmbeddings: vi.fn(),
 }))
 
 function makeResult(overrides: Partial<TokenizeResponse> = {}): TokenizeResponse {
@@ -256,4 +257,84 @@ describe('useTokenizerState', () => {
     expect(client.resetBPE).toHaveBeenCalled()
     expect(result.current.bpeModel).toEqual(emptyBPE)
   })
+
+  it('generates embeddings for tokenized result and clears them on text change', async () => {
+    const tokenizeResponse = makeResult()
+    vi.mocked(client.tokenize).mockResolvedValueOnce(tokenizeResponse)
+    const embeddingResponse = {
+      token_embeddings: [{ token: 'hi', token_id: 1, vector: [0.1, 0.2, 0.3, 0.4] }],
+      positional_embeddings: [{ position: 0, vector: [0.01, 0.02, 0.03, 0.04] }],
+      final_embeddings: [{ token: 'hi', position: 0, vector: [0.11, 0.22, 0.33, 0.44] }],
+    }
+    vi.mocked(client.createEmbeddings).mockResolvedValueOnce(embeddingResponse)
+
+    const { result } = renderHook(() => useTokenizerState())
+    await waitFor(() => expect(result.current.encodingOptions).toHaveLength(2))
+
+    act(() => result.current.setText('hi'))
+    await act(async () => {
+      await result.current.tokenize()
+    })
+
+    expect(result.current.embeddings).toBeNull()
+
+    await act(async () => {
+      await result.current.createEmbeddings()
+    })
+
+    expect(client.createEmbeddings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tokens: tokenizeResponse.tokens,
+        tokenizer_mode: 'tiktoken',
+        encoding: 'cl100k_base',
+      }),
+    )
+    expect(result.current.embeddings).toEqual(embeddingResponse)
+
+    // Changing text should clear embeddings
+    act(() => result.current.setText('new text'))
+    expect(result.current.embeddings).toBeNull()
+  })
+
+  it('passes selected embeddingDim to createEmbeddings and clears embeddings on dimension change', async () => {
+    const tokenizeResponse = makeResult()
+    vi.mocked(client.tokenize).mockResolvedValueOnce(tokenizeResponse)
+    const embeddingResponse = {
+      token_embeddings: [{ token: 'hi', token_id: 1, vector: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] }],
+      positional_embeddings: [{ position: 0, vector: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08] }],
+      final_embeddings: [{ token: 'hi', position: 0, vector: [0.11, 0.22, 0.33, 0.44, 0.55, 0.66, 0.77, 0.88] }],
+    }
+    vi.mocked(client.createEmbeddings).mockResolvedValueOnce(embeddingResponse)
+
+    const { result } = renderHook(() => useTokenizerState())
+    await waitFor(() => expect(result.current.encodingOptions).toHaveLength(2))
+
+    act(() => {
+      result.current.setText('hi')
+      result.current.setEmbeddingDim(8)
+    })
+    await act(async () => {
+      await result.current.tokenize()
+    })
+
+    await act(async () => {
+      await result.current.createEmbeddings()
+    })
+
+    expect(client.createEmbeddings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tokens: tokenizeResponse.tokens,
+        tokenizer_mode: 'tiktoken',
+        encoding: 'cl100k_base',
+        embedding_dim: 8,
+      }),
+    )
+
+    // Changing dimension clears previous embeddings
+    act(() => result.current.setEmbeddingDim(16))
+    expect(result.current.embeddings).toBeNull()
+    expect(result.current.embeddingDim).toBe(16)
+  })
 })
+
+

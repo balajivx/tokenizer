@@ -2,6 +2,8 @@ import {
   ApiError,
   type BPETrainingRequest,
   type BPETrainingResult,
+  type EmbeddingRequest,
+  type EmbeddingResponse,
   type EncodingListResponse,
   type ErrorResponse,
   type ExtractedTextResponse,
@@ -86,3 +88,16 @@ export function extractFile(file: File, signal?: AbortSignal): Promise<Extracted
     signal,
   })
 }
+
+export function createEmbeddings(
+  payload: EmbeddingRequest,
+  signal?: AbortSignal,
+): Promise<EmbeddingResponse> {
+  return request<EmbeddingResponse>('/embeddings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal,
+  })
+}
+

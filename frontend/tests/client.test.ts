@@ -119,5 +119,29 @@ describe('api client', () => {
     expect(url).toBe('/api/bpe/reset')
     expect(init?.method).toBe('POST')
   })
+
+  it('createEmbeddings POSTs token list and returns embeddings', async () => {
+    const responseBody = {
+      token_embeddings: [],
+      positional_embeddings: [],
+      final_embeddings: [],
+    }
+    vi.mocked(fetch).mockResolvedValueOnce(jsonResponse(responseBody))
+
+    const request = {
+      tokens: [{ index: 0, id: 15496, text: 'Hello', is_new: false }],
+      tokenizer_mode: 'tiktoken' as const,
+      encoding: 'cl100k_base',
+      embedding_dim: 4,
+    }
+    const result = await client.createEmbeddings(request)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = vi.mocked(fetch).mock.calls[0]
+    expect(url).toBe('/api/embeddings')
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(request)
+  })
 })
+
 

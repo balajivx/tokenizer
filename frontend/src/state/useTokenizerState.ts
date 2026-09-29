@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import * as client from '../api/client'
 import type {
   BPETrainingResult,
+  EmbeddingResponse,
   EncodingOption,
   SourceType,
   TokenizeResponse,
@@ -27,17 +28,22 @@ export interface TokenizerState {
   bpeTrainingText: string
   bpeTargetVocabSize: number
   errorMessage: string | null
+  embeddings: EmbeddingResponse | null
+  isEmbeddingLoading: boolean
+  embeddingDim: number
   setText: (text: string) => void
   setTokenizerMode: (mode: TokenizerMode) => void
   setEncoding: (encoding: string) => void
   setBpeTrainingText: (text: string) => void
   setBpeTargetVocabSize: (size: number) => void
+  setEmbeddingDim: (dim: number) => void
   uploadFile: (file: File) => Promise<void>
   useDirectTextEntry: () => void
   tokenize: () => Promise<void>
   trainBPE: () => Promise<void>
   resetBPE: () => Promise<void>
   resetVocabulary: () => Promise<void>
+  createEmbeddings: () => Promise<void>
 }
 
 function errorMessageFrom(error: unknown): string {
@@ -62,11 +68,34 @@ export function useTokenizerState(): TokenizerState {
   )
   const [bpeTargetVocabSize, setBpeTargetVocabSize] = useState(16)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [embeddings, setEmbeddings] = useState<EmbeddingResponse | null>(null)
+  const [isEmbeddingLoading, setIsEmbeddingLoading] = useState(false)
+  const [embeddingDim, setEmbeddingDimState] = useState<number>(4)
 
   // Guards against a stale in-flight request overwriting a newer one when the
   // user switches mode/encoding mid-request (spec.md Edge Cases / SC-006).
   const requestIdRef = useRef(0)
   const abortRef = useRef<AbortController | null>(null)
+
+  const handleSetText = useCallback((newText: string) => {
+    setText(newText)
+    setEmbeddings(null)
+  }, [])
+
+  const handleSetTokenizerMode = useCallback((newMode: TokenizerMode) => {
+    setTokenizerMode(newMode)
+    setEmbeddings(null)
+  }, [])
+
+  const handleSetEncoding = useCallback((newEncoding: string) => {
+    setEncoding(newEncoding)
+    setEmbeddings(null)
+  }, [])
+
+  const handleSetEmbeddingDim = useCallback((dim: number) => {
+    setEmbeddingDimState(dim)
+    setEmbeddings(null)
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -111,6 +140,7 @@ export function useTokenizerState(): TokenizerState {
     setInputMode('file')
     setStatus('loading')
     setErrorMessage(null)
+    setEmbeddings(null)
 
     try {
       const response = await client.extractFile(file, controller.signal)
@@ -128,6 +158,7 @@ export function useTokenizerState(): TokenizerState {
   const useDirectTextEntry = useCallback(() => {
     setInputMode('text')
     setUploadedFilename(null)
+    setEmbeddings(null)
   }, [])
 
   const tokenize = useCallback(async () => {
@@ -144,6 +175,7 @@ export function useTokenizerState(): TokenizerState {
 
     setStatus('loading')
     setErrorMessage(null)
+    setEmbeddings(null)
 
     const sourceType: SourceType =
       inputMode === 'file' ? (uploadedFilename?.endsWith('.pdf') ? 'pdf_file' : 'txt_file') : 'text'
@@ -171,6 +203,27 @@ export function useTokenizerState(): TokenizerState {
     }
   }, [text, inputMode, uploadedFilename, tokenizerMode, encoding, refreshVocabulary])
 
+  const createEmbeddings = useCallback(async () => {
+    if (!result || !result.tokens.length) return
+
+    setIsEmbeddingLoading(true)
+    setErrorMessage(null)
+
+    try {
+      const response = await client.createEmbeddings({
+        tokens: result.tokens,
+        tokenizer_mode: tokenizerMode,
+        encoding: tokenizerMode === 'tiktoken' ? encoding : null,
+        embedding_dim: embeddingDim,
+      })
+      setEmbeddings(response)
+    } catch (error) {
+      setErrorMessage(errorMessageFrom(error))
+    } finally {
+      setIsEmbeddingLoading(false)
+    }
+  }, [result, tokenizerMode, encoding, embeddingDim])
+
   const trainBPE = useCallback(async () => {
     if (!bpeTrainingText.trim()) {
       setStatus('error')
@@ -197,6 +250,7 @@ export function useTokenizerState(): TokenizerState {
   const resetBPE = useCallback(async () => {
     setStatus('loading')
     setErrorMessage(null)
+    setEmbeddings(null)
     try {
       const response = await client.resetBPE()
       setBpeModel(response)
@@ -208,6 +262,7 @@ export function useTokenizerState(): TokenizerState {
   }, [])
 
   const resetVocabulary = useCallback(async () => {
+    setEmbeddings(null)
     try {
       const response = await client.resetVocabulary()
       setVocabulary(response)
@@ -231,16 +286,21 @@ export function useTokenizerState(): TokenizerState {
     bpeTrainingText,
     bpeTargetVocabSize,
     errorMessage,
-    setText,
-    setTokenizerMode,
-    setEncoding,
+    embeddings,
+    isEmbeddingLoading,
+    embeddingDim,
+    setText: handleSetText,
+    setTokenizerMode: handleSetTokenizerMode,
+    setEncoding: handleSetEncoding,
     setBpeTrainingText,
     setBpeTargetVocabSize,
+    setEmbeddingDim: handleSetEmbeddingDim,
     uploadFile,
     useDirectTextEntry,
     tokenize,
     trainBPE,
     resetBPE,
     resetVocabulary,
+    createEmbeddings,
   }
 }

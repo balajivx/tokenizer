@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, UploadFile
 
 from src.schemas.bpe import BPETrainingRequest, BPETrainingResult
+from src.schemas.embeddings import EmbeddingRequest, EmbeddingResponse
 from src.schemas.errors import ErrorCode, TokenizerError
 from src.schemas.files import ExtractedTextResponse
 from src.schemas.tokenize import (
@@ -10,7 +11,13 @@ from src.schemas.tokenize import (
     TokenizerMode,
 )
 from src.schemas.vocabulary import VocabularyResponse
-from src.services import custom_tokenizer_service, file_service, stats_service, tiktoken_service
+from src.services import (
+    custom_tokenizer_service,
+    embedding_service,
+    file_service,
+    stats_service,
+    tiktoken_service,
+)
 from src.services.bpe_service import bpe_store
 from src.services.vocabulary_store import vocabulary_store
 
@@ -58,6 +65,24 @@ def post_tokenize(request: TokenizeRequest) -> TokenizeResponse:
         token_count=len(tokens),
         **stats,
     )
+
+
+@router.post("/embeddings", response_model=EmbeddingResponse)
+def post_embeddings(request: EmbeddingRequest) -> EmbeddingResponse:
+    if request.tokenizer_mode == TokenizerMode.TIKTOKEN and not request.encoding:
+        raise TokenizerError(
+            ErrorCode.UNSUPPORTED_ENCODING,
+            "Please select an encoding for Tiktoken mode.",
+            status_code=400,
+        )
+
+    return embedding_service.create_embeddings(
+        tokens=request.tokens,
+        tokenizer_mode=request.tokenizer_mode,
+        encoding=request.encoding,
+        embedding_dim=request.embedding_dim,
+    )
+
 
 
 @router.post("/bpe/train", response_model=BPETrainingResult)

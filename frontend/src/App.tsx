@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import styles from './App.module.css'
 import { BPETrainingPanel } from './components/BPETrainingPanel'
+import { EmbeddingsPanel } from './components/EmbeddingsPanel'
 import { EncodingSelector } from './components/EncodingSelector'
 import { ExtractedTextPanel } from './components/ExtractedTextPanel'
 import { InputPanel } from './components/InputPanel'
@@ -10,8 +12,12 @@ import { TokenVisualization } from './components/TokenVisualization'
 import { VocabularyPanel } from './components/VocabularyPanel'
 import { useTokenizerState } from './state/useTokenizerState'
 
+const DIMENSION_PRESETS = [4, 8, 16, 32, 64]
+
 function App() {
   const state = useTokenizerState()
+  const [isCustomDim, setIsCustomDim] = useState(false)
+
 
   return (
     <main className={styles.app}>
@@ -86,6 +92,67 @@ function App() {
           <h2>Tokenization Results</h2>
           <StatsPanel result={state.result} />
           <TokenVisualization tokens={state.result.tokens} />
+
+          <div className={styles.embeddingsActionRow}>
+            <button
+              type="button"
+              className={styles.createEmbeddingsBtn}
+              onClick={state.createEmbeddings}
+              disabled={state.isEmbeddingLoading}
+            >
+              {state.isEmbeddingLoading ? '⚡ Generating Embeddings...' : '✨ Create Embeddings'}
+            </button>
+
+            <div className={styles.dimSelectorGroup}>
+              <label htmlFor="dim-select" className={styles.dimLabel}>
+                Dimensions:
+              </label>
+              <select
+                id="dim-select"
+                className={styles.dimSelect}
+                value={
+                  DIMENSION_PRESETS.includes(state.embeddingDim) && !isCustomDim
+                    ? state.embeddingDim
+                    : 'custom'
+                }
+                onChange={(e) => {
+                  if (e.target.value === 'custom') {
+                    setIsCustomDim(true)
+                  } else {
+                    setIsCustomDim(false)
+                    state.setEmbeddingDim(Number(e.target.value))
+                  }
+                }}
+              >
+                <option value={4}>4 dimensions</option>
+                <option value={8}>8 dimensions</option>
+                <option value={16}>16 dimensions</option>
+                <option value={32}>32 dimensions</option>
+                <option value={64}>64 dimensions</option>
+                <option value="custom">Custom...</option>
+              </select>
+
+              {(isCustomDim || !DIMENSION_PRESETS.includes(state.embeddingDim)) && (
+                <input
+                  type="number"
+                  min={1}
+                  max={1024}
+                  aria-label="Custom embedding dimension"
+                  className={styles.customDimInput}
+                  value={state.embeddingDim}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10)
+                    if (!isNaN(val) && val > 0) {
+                      state.setEmbeddingDim(val)
+                    }
+                  }}
+                  placeholder="e.g. 12"
+                />
+              )}
+            </div>
+          </div>
+
+          {state.embeddings && <EmbeddingsPanel embeddings={state.embeddings} />}
         </section>
       )}
 

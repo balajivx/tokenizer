@@ -100,6 +100,36 @@ export interface ErrorResponse {
   message: string
 }
 
+export interface EmbeddingRequest {
+  tokens: TokenInfo[]
+  tokenizer_mode: TokenizerMode
+  encoding: string | null
+  embedding_dim?: number
+}
+
+export interface TokenEmbeddingRow {
+  token: string
+  token_id: number
+  vector: number[]
+}
+
+export interface PositionalEmbeddingRow {
+  position: number
+  vector: number[]
+}
+
+export interface FinalEmbeddingRow {
+  token: string
+  position: number
+  vector: number[]
+}
+
+export interface EmbeddingResponse {
+  token_embeddings: TokenEmbeddingRow[]
+  positional_embeddings: PositionalEmbeddingRow[]
+  final_embeddings: FinalEmbeddingRow[]
+}
+
 export class ApiError extends Error {
   error_code: string
 
@@ -108,3 +138,4 @@ export class ApiError extends Error {
     this.error_code = body.error_code
   }
 }
+
